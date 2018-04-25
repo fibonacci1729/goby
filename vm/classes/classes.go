@@ -21,4 +21,5 @@ const (
 	GoMapClass     = "GoMap"
 	DecimalClass   = "Decimal"
 	BlockClass     = "Block"
+	RipperClass    = "Ripper"
 )

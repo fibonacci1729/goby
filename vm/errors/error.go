@@ -31,4 +31,5 @@ const (
 	WrongArgumentTypeFormat     = "Expect argument to be %s. got: %s"
 	CantYieldWithoutBlockFormat = "Can't yield without a block"
 	DividedByZero               = "Divided by 0"
+	InvalidGobyCode             = "Invalid Goby code"
 )

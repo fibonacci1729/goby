@@ -51,6 +51,7 @@ var standardLibraries = map[string]func(*VM){
 	"concurrent/hash":    initConcurrentHashClass,
 	"concurrent/rw_lock": initConcurrentRWLockClass,
 	"spec":               initSpecClass,
+	"ripper":             initRipperClass,
 }
 
 // VM represents a stack based virtual machine.
