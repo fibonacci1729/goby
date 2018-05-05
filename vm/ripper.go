@@ -30,7 +30,7 @@ func builtInRipperClassMethods() []*BuiltinMethodObject {
 		{
 			// Returns the list of instruction code generated from Goby code.
 			// Returns an error when the code is invalid.
-			// The return value is a "tuple" style:
+			// The return value is a "tuple" style nested array:
 			// - `Array`: contains an instruction set
 			//   - `arg_types:` (none if `nil`)
 			// 		 - `names:` array of names (string)
@@ -54,7 +54,7 @@ func builtInRipperClassMethods() []*BuiltinMethodObject {
 			// ```
 			//
 			// @param Goby code [String]
-			// @return [String]
+			// @return [Array]
 			Name: "instruction",
 			Fn: func(receiver Object, sourceLine int) builtinMethodBody {
 				return func(t *thread, args []Object, blockFrame *normalCallFrame) Object {
