@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"github.com/goby-lang/goby/compiler"
+	"github.com/goby-lang/goby/compiler/bytecode"
 	"github.com/goby-lang/goby/compiler/lexer"
 	"github.com/goby-lang/goby/compiler/parser"
 	"github.com/goby-lang/goby/compiler/token"
@@ -22,6 +24,57 @@ func builtInRipperClassMethods() []*BuiltinMethodObject {
 			Fn: func(receiver Object, sourceLine int) builtinMethodBody {
 				return func(t *thread, args []Object, blockFrame *normalCallFrame) Object {
 					return t.vm.initUnsupportedMethodError(sourceLine, "#new", receiver)
+				}
+			},
+		},
+		{
+			// Returns the list of instruction code generated from Goby code.
+			// Returns an error when the code is invalid.
+			// The return value is a "tuple" style:
+			// - `Array`: contains an instruction set
+			//   - `arg_types:` (none if `nil`)
+			// 		 - `names:` array of names (string)
+			//     - `types:` array of types (integer)
+			//   - `instructions:` array of instructions
+			//     - `action:` string
+			//     - `anchor:` integer
+			//     - `line:` integer
+			//     - `params:` array of parameters (string)
+			//     - `source_line:` integer
+			//     - `arg_set:` (none if `nil`)
+			//   		 - `names:` array of names (string)
+			//       - `types:` array of types (integer)
+			//
+			// ```ruby
+			// require 'ripper'; Ripper.instruction "10.times do |i| puts i end"
+			// #=>
+			//
+			// require 'ripper'; Ripper.instruction "10.times do |i| puts i" # the code is invalid
+			// #=> TypeError: InternalError%!(EXTRA string=String, string=Invalid Goby code)
+			// ```
+			//
+			// @param Goby code [String]
+			// @return [String]
+			Name: "instruction",
+			Fn: func(receiver Object, sourceLine int) builtinMethodBody {
+				return func(t *thread, args []Object, blockFrame *normalCallFrame) Object {
+					if len(args) != 1 {
+						return t.vm.initErrorObject(errors.ArgumentError, sourceLine, "Expect 1 argument. got=%d", len(args))
+					}
+
+					arg := args[0]
+					switch arg.(type) {
+					case *StringObject:
+					default:
+						return t.vm.initErrorObject(errors.TypeError, sourceLine, errors.WrongArgumentTypeFormat, classes.StringClass, arg.Class().Name)
+					}
+
+					i, err := compiler.CompileToInstructions(arg.toString(), NormalMode)
+					if err != nil {
+						return t.vm.initErrorObject(errors.TypeError, sourceLine, errors.InternalError, classes.StringClass, errors.InvalidGobyCode)
+					}
+
+					return t.vm.convertToTuple(i)
 				}
 			},
 		},
@@ -168,6 +221,64 @@ func initRipperClass(vm *VM) {
 }
 
 // Other helper functions ----------------------------------------------
+
+func (vm *VM) convertToTuple(instSet []*bytecode.InstructionSet) *ArrayObject {
+	ary := []Object{}
+	for _, insts := range instSet {
+		hInsts := make(map[string]Object)
+		hInsts["name"] = vm.initStringObject(insts.Name())
+		hInsts["type"] = vm.initStringObject(insts.Type())
+		if insts.ArgTypes() != nil {
+			hInsts["arg_types"] = vm.getArgNameType(insts.ArgTypes())
+		}
+		ary = append(ary, vm.initHashObject(hInsts))
+
+		aInst := []Object{}
+		for _, ins := range insts.Instructions {
+			hInst := make(map[string]Object)
+			hInst["action"] = vm.initStringObject(ins.Action)
+			hInst["line"] = vm.initIntegerObject(ins.Line())
+			hInst["source_line"] = vm.initIntegerObject(ins.SourceLine())
+			anchor, _ := ins.AnchorLine()
+			hInst["anchor"] = vm.initIntegerObject(anchor)
+
+			aParams := []Object{}
+			for _, param := range ins.Params {
+				aParams = append(aParams, vm.initStringObject(param))
+			}
+			hInst["params"] = vm.initArrayObject(aParams)
+
+			if ins.ArgSet != nil {
+				hInsts["arg_set"] = vm.getArgNameType(ins.ArgSet)
+			}
+
+			aInst = append(aInst, vm.initHashObject(hInst))
+		}
+
+		hInsts["instructions"] = vm.initArrayObject(aInst)
+		ary = append(ary, vm.initHashObject(hInsts))
+	}
+	return vm.initArrayObject(ary)
+}
+
+func (vm *VM) getArgNameType(argSet *bytecode.ArgSet) *HashObject {
+	h := make(map[string]Object)
+
+	aName := []Object{}
+	for _, argname := range argSet.Names() {
+		aName = append(aName, vm.initStringObject(argname))
+	}
+	h["names"] = vm.initArrayObject(aName)
+
+	aType := []Object{}
+	for _, argtype := range argSet.Types() {
+		aType = append(aType, vm.initIntegerObject(argtype))
+	}
+
+	h["types"] = vm.initArrayObject(aType)
+	return vm.initHashObject(h)
+}
+
 // TODO: This should finally be auto-generated from token.go
 func convertLex(t token.Type) string {
 	var s string
