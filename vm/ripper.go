@@ -22,7 +22,7 @@ func builtInRipperClassMethods() []*BuiltinMethodObject {
 		{
 			Name: "new",
 			Fn: func(receiver Object, sourceLine int) builtinMethodBody {
-				return func(t *thread, args []Object, blockFrame *normalCallFrame) Object {
+				return func(t *Thread, args []Object, blockFrame *normalCallFrame) Object {
 					return t.vm.initUnsupportedMethodError(sourceLine, "#new", receiver)
 				}
 			},
@@ -57,21 +57,21 @@ func builtInRipperClassMethods() []*BuiltinMethodObject {
 			// @return [Array]
 			Name: "instruction",
 			Fn: func(receiver Object, sourceLine int) builtinMethodBody {
-				return func(t *thread, args []Object, blockFrame *normalCallFrame) Object {
+				return func(t *Thread, args []Object, blockFrame *normalCallFrame) Object {
 					if len(args) != 1 {
-						return t.vm.initErrorObject(errors.ArgumentError, sourceLine, "Expect 1 argument. got=%d", len(args))
+						return t.vm.InitErrorObject(errors.ArgumentError, sourceLine, "Expect 1 argument. got=%d", len(args))
 					}
 
 					arg := args[0]
 					switch arg.(type) {
 					case *StringObject:
 					default:
-						return t.vm.initErrorObject(errors.TypeError, sourceLine, errors.WrongArgumentTypeFormat, classes.StringClass, arg.Class().Name)
+						return t.vm.InitErrorObject(errors.TypeError, sourceLine, errors.WrongArgumentTypeFormat, classes.StringClass, arg.Class().Name)
 					}
 
 					i, err := compiler.CompileToInstructions(arg.toString(), NormalMode)
 					if err != nil {
-						return t.vm.initErrorObject(errors.TypeError, sourceLine, errors.InternalError, classes.StringClass, errors.InvalidGobyCode)
+						return t.vm.InitErrorObject(errors.TypeError, sourceLine, errors.InternalError, classes.StringClass, errors.InvalidGobyCode)
 					}
 
 					return t.vm.convertToTuple(i)
@@ -94,28 +94,28 @@ func builtInRipperClassMethods() []*BuiltinMethodObject {
 			// @return [Array]
 			Name: "lex",
 			Fn: func(receiver Object, sourceLine int) builtinMethodBody {
-				return func(t *thread, args []Object, blockFrame *normalCallFrame) Object {
+				return func(t *Thread, args []Object, blockFrame *normalCallFrame) Object {
 					if len(args) != 1 {
-						return t.vm.initErrorObject(errors.ArgumentError, sourceLine, "Expect 1 argument. got=%d", len(args))
+						return t.vm.InitErrorObject(errors.ArgumentError, sourceLine, "Expect 1 argument. got=%d", len(args))
 					}
 
 					arg := args[0]
 					switch arg.(type) {
 					case *StringObject:
 					default:
-						return t.vm.initErrorObject(errors.TypeError, sourceLine, errors.WrongArgumentTypeFormat, classes.StringClass, arg.Class().Name)
+						return t.vm.InitErrorObject(errors.TypeError, sourceLine, errors.WrongArgumentTypeFormat, classes.StringClass, arg.Class().Name)
 					}
 
 					l := lexer.New(arg.toString())
-					el := t.vm.initArrayObject([]Object{})
+					el := t.vm.InitArrayObject([]Object{})
 					eli := []Object{}
 					var nt token.Token
 					for i := 0; ; i++ {
 						nt = l.NextToken()
-						eli = append(eli, t.vm.initIntegerObject(nt.Line))
+						eli = append(eli, t.vm.InitIntegerObject(nt.Line))
 						eli = append(eli, t.vm.initStringObject(convertLex(nt.Type)))
 						eli = append(eli, t.vm.initStringObject(nt.Literal))
-						el.Elements = append(el.Elements, t.vm.initArrayObject(eli))
+						el.Elements = append(el.Elements, t.vm.InitArrayObject(eli))
 						if nt.Type == token.EOF {
 							break
 						}
@@ -143,16 +143,16 @@ func builtInRipperClassMethods() []*BuiltinMethodObject {
 			// @return [String]
 			Name: "parse",
 			Fn: func(receiver Object, sourceLine int) builtinMethodBody {
-				return func(t *thread, args []Object, blockFrame *normalCallFrame) Object {
+				return func(t *Thread, args []Object, blockFrame *normalCallFrame) Object {
 					if len(args) != 1 {
-						return t.vm.initErrorObject(errors.ArgumentError, sourceLine, "Expect 1 argument. got=%d", len(args))
+						return t.vm.InitErrorObject(errors.ArgumentError, sourceLine, "Expect 1 argument. got=%d", len(args))
 					}
 
 					arg := args[0]
 					switch arg.(type) {
 					case *StringObject:
 					default:
-						return t.vm.initErrorObject(errors.TypeError, sourceLine, errors.WrongArgumentTypeFormat, classes.StringClass, arg.Class().Name)
+						return t.vm.InitErrorObject(errors.TypeError, sourceLine, errors.WrongArgumentTypeFormat, classes.StringClass, arg.Class().Name)
 					}
 
 					l := lexer.New(arg.toString())
@@ -160,7 +160,7 @@ func builtInRipperClassMethods() []*BuiltinMethodObject {
 					program, err := p.ParseProgram()
 
 					if err != nil {
-						return t.vm.initErrorObject(errors.TypeError, sourceLine, errors.InternalError, classes.StringClass, errors.InvalidGobyCode)
+						return t.vm.InitErrorObject(errors.TypeError, sourceLine, errors.InternalError, classes.StringClass, errors.InvalidGobyCode)
 					}
 
 					return t.vm.initStringObject(program.String())
@@ -183,16 +183,16 @@ func builtInRipperClassMethods() []*BuiltinMethodObject {
 			// @return [String]
 			Name: "token",
 			Fn: func(receiver Object, sourceLine int) builtinMethodBody {
-				return func(t *thread, args []Object, blockFrame *normalCallFrame) Object {
+				return func(t *Thread, args []Object, blockFrame *normalCallFrame) Object {
 					if len(args) != 1 {
-						return t.vm.initErrorObject(errors.ArgumentError, sourceLine, "Expect 1 argument. got=%d", len(args))
+						return t.vm.InitErrorObject(errors.ArgumentError, sourceLine, "Expect 1 argument. got=%d", len(args))
 					}
 
 					arg := args[0]
 					switch arg.(type) {
 					case *StringObject:
 					default:
-						return t.vm.initErrorObject(errors.TypeError, sourceLine, errors.WrongArgumentTypeFormat, classes.StringClass, arg.Class().Name)
+						return t.vm.InitErrorObject(errors.TypeError, sourceLine, errors.WrongArgumentTypeFormat, classes.StringClass, arg.Class().Name)
 					}
 
 					l := lexer.New(arg.toString())
@@ -206,7 +206,7 @@ func builtInRipperClassMethods() []*BuiltinMethodObject {
 						}
 						el = append(el, t.vm.initStringObject(nt.Literal))
 					}
-					return t.vm.initArrayObject(el)
+					return t.vm.InitArrayObject(el)
 				}
 			},
 		},
@@ -231,34 +231,34 @@ func (vm *VM) convertToTuple(instSet []*bytecode.InstructionSet) *ArrayObject {
 		if insts.ArgTypes() != nil {
 			hInsts["arg_types"] = vm.getArgNameType(insts.ArgTypes())
 		}
-		ary = append(ary, vm.initHashObject(hInsts))
+		ary = append(ary, vm.InitHashObject(hInsts))
 
 		aInst := []Object{}
 		for _, ins := range insts.Instructions {
 			hInst := make(map[string]Object)
 			hInst["action"] = vm.initStringObject(ins.Action)
-			hInst["line"] = vm.initIntegerObject(ins.Line())
-			hInst["source_line"] = vm.initIntegerObject(ins.SourceLine())
+			hInst["line"] = vm.InitIntegerObject(ins.Line())
+			hInst["source_line"] = vm.InitIntegerObject(ins.SourceLine())
 			anchor, _ := ins.AnchorLine()
-			hInst["anchor"] = vm.initIntegerObject(anchor)
+			hInst["anchor"] = vm.InitIntegerObject(anchor)
 
 			aParams := []Object{}
 			for _, param := range ins.Params {
 				aParams = append(aParams, vm.initStringObject(param))
 			}
-			hInst["params"] = vm.initArrayObject(aParams)
+			hInst["params"] = vm.InitArrayObject(aParams)
 
 			if ins.ArgSet != nil {
 				hInsts["arg_set"] = vm.getArgNameType(ins.ArgSet)
 			}
 
-			aInst = append(aInst, vm.initHashObject(hInst))
+			aInst = append(aInst, vm.InitHashObject(hInst))
 		}
 
-		hInsts["instructions"] = vm.initArrayObject(aInst)
-		ary = append(ary, vm.initHashObject(hInsts))
+		hInsts["instructions"] = vm.InitArrayObject(aInst)
+		ary = append(ary, vm.InitHashObject(hInsts))
 	}
-	return vm.initArrayObject(ary)
+	return vm.InitArrayObject(ary)
 }
 
 func (vm *VM) getArgNameType(argSet *bytecode.ArgSet) *HashObject {
@@ -268,15 +268,15 @@ func (vm *VM) getArgNameType(argSet *bytecode.ArgSet) *HashObject {
 	for _, argname := range argSet.Names() {
 		aName = append(aName, vm.initStringObject(argname))
 	}
-	h["names"] = vm.initArrayObject(aName)
+	h["names"] = vm.InitArrayObject(aName)
 
 	aType := []Object{}
 	for _, argtype := range argSet.Types() {
-		aType = append(aType, vm.initIntegerObject(argtype))
+		aType = append(aType, vm.InitIntegerObject(argtype))
 	}
 
-	h["types"] = vm.initArrayObject(aType)
-	return vm.initHashObject(h)
+	h["types"] = vm.InitArrayObject(aType)
+	return vm.InitHashObject(h)
 }
 
 // TODO: This should finally be auto-generated from token.go
